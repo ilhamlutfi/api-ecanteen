@@ -1,15 +1,19 @@
 <?php
 
+use App\Http\Controllers\AuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\SupplierController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
-// Route::prefix('v1')->group(function () {
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::apiResource('categories', CategoryController::class);
+    Route::apiResource('suppliers', SupplierController::class);
+});
 
-// })
+Route::post('registration', [AuthController::class, 'registration']);
 
-Route::apiResource('categories', CategoryController::class);
