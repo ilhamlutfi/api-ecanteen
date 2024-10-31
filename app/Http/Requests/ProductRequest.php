@@ -4,14 +4,14 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class SupplierRequest extends FormRequest
+class ProductRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
-        return auth()->check();
+        return true;
     }
 
     /**
@@ -21,14 +21,14 @@ class SupplierRequest extends FormRequest
      */
     public function rules(): array
     {
-        $routeId = $this->route('supplier');
-
         return [
-            'code' => 'required|digits:3|unique:suppliers,code,'. $routeId . ',uuid',
+            'category_id' => 'required|exists:categories,id',
+            'supplier_id' => 'required|exists:suppliers,id',
             'name' => 'required|string|min:3|max:255',
-            'address' => 'required|string|min:3|max:255',
-            'phone' => 'required|numeric',
-            'email' => 'required|email',
+            'image' => 'required|file|image|mimes:png,jpg,jpeg,webp|mimetypes:image/png,image/jpg,image/jpeg,image/webp|max:2048',
+            'price' => 'required|integer|numeric',
+            'quantity' => 'required|numeric',
+            'description' => 'nullable|string|min:3|max:255',
         ];
     }
 }

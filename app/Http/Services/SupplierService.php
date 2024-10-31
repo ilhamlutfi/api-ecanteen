@@ -36,15 +36,4 @@ class SupplierService
 
         return Supplier::create($data);
     }
-
-    // public function update(array $data, string $uuid)
-    // {
-    //     $data['slug'] = Str::slug($data['name']);
-
-    //     $supplier = Supplier::where('uuid', $uuid)->first();
-
-    //     $supplier->update($data);
-
-    //     return $supplier;
-    // }
 }
