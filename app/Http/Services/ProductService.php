@@ -13,16 +13,18 @@ class ProductService
             $products = Product::with('category:id,name', 'supplier:id,name')->when(request()->search, function ($query) {
                 $query->where('name', 'like', '%' . request()->search . '%');
             })
-            ->select(['id', 'category_id', 'supplier_id', 'name', 'slug', 'price'])
-            ->latest()
-            ->paginate(10);
+                ->select(['uuid', 'category_id', 'supplier_id', 'name', 'slug', 'price', 'image'])
+                ->latest()
+                ->paginate(10);
 
             // append search
             $products->appends(['search' => request()->search]);
         } else {
             $products = Product::with('category:id,name', 'supplier:id,name')->when(request()->search, function ($query) {
                 $query->where('name', 'like', '%' . request()->search . '%');
-            })->get(['id', 'category_id', 'supplier_id', 'name', 'slug', 'price']);
+            })
+            ->latest()
+            ->get(['uuid', 'category_id', 'supplier_id', 'name', 'slug', 'price', 'image']);
         }
 
         return $products;
@@ -35,7 +37,6 @@ class ProductService
         }
 
         return Product::where($column, $value)->first();
-
     }
 
     public function create(array $data)
@@ -43,5 +44,12 @@ class ProductService
         $data['slug'] = Str::slug($data['name']);
 
         return Product::create($data);
+    }
+
+    public function update(array $data, string $uuid)
+    {
+        $data['slug'] = Str::slug($data['name']);
+
+        return Product::where('uuid', $uuid)->update($data);
     }
 }

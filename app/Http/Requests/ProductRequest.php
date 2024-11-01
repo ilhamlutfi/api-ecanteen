@@ -21,11 +21,13 @@ class ProductRequest extends FormRequest
      */
     public function rules(): array
     {
+        $routeId = $this->route('product');
+
         return [
             'category_id' => 'required|exists:categories,id',
             'supplier_id' => 'required|exists:suppliers,id',
-            'name' => 'required|string|min:3|max:255',
-            'image' => 'required|file|image|mimes:png,jpg,jpeg,webp|mimetypes:image/png,image/jpg,image/jpeg,image/webp|max:2048',
+            'name' => 'required|string|min:3|max:255|unique:products,name,'. $routeId . ',uuid',
+            'image' => $this->method() === 'POST' ? 'required|file|image|mimes:png,jpg,jpeg,webp|mimetypes:image/png,image/jpg,image/jpeg,image/webp|max:2048' : 'nullable|file|image|mimes:png,jpg,jpeg,webp|mimetypes:image/png,image/jpg,image/jpeg,image/webp|max:2048',
             'price' => 'required|integer|numeric',
             'quantity' => 'required|numeric',
             'description' => 'nullable|string|min:3|max:255',

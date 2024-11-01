@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\ProductRequest;
 use Illuminate\Http\Request;
+use App\Http\Services\FileService;
+use Illuminate\Support\Facades\DB;
+use App\Http\Requests\ProductRequest;
 use App\Http\Services\ProductService;
 use App\Http\Resources\ResponseResource;
-use App\Http\Services\FileService;
 
 class ProductController extends Controller
 {
@@ -34,6 +35,7 @@ class ProductController extends Controller
 
         $productsResponse = $products->map(function ($product) {
             $product->price = 'Rp. ' . number_format($product->price, 0, '.', ',');
+            $product->image = url(asset('storage/' . $product->image));
             // $product->makeHidden(['created_at', 'updated_at']); // hide field
 
             return $product;
@@ -88,24 +90,108 @@ class ProductController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Product $product)
+    public function show(string $uuid)
     {
-        //
+        $getProduct = $this->productService->getByFirst('uuid', $uuid, true);
+
+        if (!$getProduct) {
+            return new ResponseResource(false, 'Product not found with uuid: ' . $uuid . '', null, [
+                'code' => 404
+            ], 404);
+        }
+
+        $getProduct->price = 'Rp. ' . number_format($getProduct->price, 0, '.', ',');
+        $getProduct->image = url(asset('storage/' . $getProduct->image));
+
+        return new ResponseResource(true, 'Product found', $getProduct, [
+            'code' => 200
+        ], 200);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Product $product)
+    public function update(ProductRequest $request, string $uuid)
     {
-        //
+        $data = $request->validated();
+
+        DB::beginTransaction();
+
+
+        try {
+            $getProduct = $this->productService->getByFirst('uuid', $uuid, true);
+
+            if (!$getProduct) {
+                return new ResponseResource(false, 'Product not found with uuid: ' . $uuid . '', null, [
+                    'code' => 404
+                ], 404);
+            }
+
+            if ($request->hasFile('image')) {
+                // unlink image
+                $this->fileService->delete($getProduct->image);
+
+                $uploadImage = $this->fileService->upload($data['image'], 'images');
+
+                $data['image'] = $uploadImage;
+            } else {
+                $data['image'] = $getProduct->image;
+            }
+
+            $getProduct->update($data);
+
+            $productResponse = [
+                'uuid' => $getProduct->uuid,
+                'category_id' => $getProduct->category_id,
+                'supplier_id' => $getProduct->supplier_id,
+                'name' => $getProduct->name,
+                'image' => $getProduct->image,
+                'price' => $getProduct->price,
+                'quantity' => $getProduct->quantity,
+                'description' => $getProduct->description
+            ];
+
+            DB::commit();
+
+            return new ResponseResource(true, 'Product updated successfully', $productResponse, [
+                'code' => 200,
+                'category_name' => $getProduct->category->name,
+                'supplier_name' => $getProduct->supplier->name,
+                'image_url' => url(asset('storage/' . $getProduct->image))
+            ], 200);
+        } catch (\Exception $th) {
+            DB::rollBack();
+
+            if (isset($data['image'])) {
+                $this->fileService->delete($data['image'], 'images');
+            }
+
+            return new ResponseResource(false, $th->getMessage(), null, [
+                'code' => 500
+            ], 500);
+        }
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Product $product)
+    public function destroy(string $uuid)
     {
-        //
+        $getProduct = $this->productService->getByFirst('uuid', $uuid, true);
+
+        if (!$getProduct) {
+            return new ResponseResource(false, 'Product not found with uuid: ' . $uuid . '', null, [
+                'code' => 404
+            ], 404);
+        }
+
+        // unlink image
+        $this->fileService->delete($getProduct->image);
+
+        $getProduct->delete();
+
+        return new ResponseResource(true, 'Product deleted successfully', null, [
+            'code' => 200
+        ], 200);
     }
 }
