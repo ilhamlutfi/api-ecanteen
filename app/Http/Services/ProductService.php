@@ -13,7 +13,7 @@ class ProductService
             $products = Product::with('category:id,name', 'supplier:id,name')->when(request()->search, function ($query) {
                 $query->where('name', 'like', '%' . request()->search . '%');
             })
-                ->select(['uuid', 'category_id', 'supplier_id', 'name', 'slug', 'price', 'image'])
+                ->select(['uuid', 'category_id', 'supplier_id', 'name', 'slug', 'quantity', 'price', 'image'])
                 ->latest()
                 ->paginate(10);
 
@@ -24,7 +24,7 @@ class ProductService
                 $query->where('name', 'like', '%' . request()->search . '%');
             })
             ->latest()
-            ->get(['uuid', 'category_id', 'supplier_id', 'name', 'slug', 'price', 'image']);
+            ->get(['uuid', 'category_id', 'supplier_id', 'name', 'slug', 'quantity', 'price', 'image']);
         }
 
         return $products;

@@ -26,4 +26,3 @@ Route::get('user-list', [UserController::class, 'index']);
 
 Route::post('registration', [AuthController::class, 'registration']);
 Route::post('login', [AuthController::class, 'login']);
-
