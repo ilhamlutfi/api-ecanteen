@@ -11,7 +11,7 @@ class OrderTransactionService
 {
     public function __construct(
         private ProductService $productService
-    ){}
+    ) {}
 
     public function getTransaction($paginate = false)
     {
@@ -29,9 +29,9 @@ class OrderTransactionService
             $transactions = OrderTransaction::with('student:id,name', 'product:id,name,category_id', 'product.category:id,name')->when(request()->search, function ($query) {
                 $query->where('name', 'like', '%' . request()->search . '%');
             })
-            ->latest()
-            ->limit(10)
-            ->get(['uuid', 'student_id', 'product_id','quantity', 'total_price']);
+                ->latest()
+                ->limit(10)
+                ->get(['uuid', 'student_id', 'product_id', 'quantity', 'total_price']);
         }
 
         return $transactions;
@@ -44,6 +44,13 @@ class OrderTransactionService
         }
 
         return OrderTransaction::where($column, $value)->first();
+    }
+
+    public function getByStudent($id)
+    {
+        return OrderTransaction::where('student_id', $id)
+            ->with('student:id,name', 'product:id,name')
+            ->latest()->get();
     }
 
     public function create(array $data, int $product_id)

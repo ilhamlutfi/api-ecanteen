@@ -2,15 +2,24 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\SupplierRequest;
 use Illuminate\Http\Request;
+use App\Http\Requests\SupplierRequest;
 use App\Http\Services\SupplierService;
 use App\Http\Resources\ResponseResource;
+use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Routing\Controllers\HasMiddleware;
 
-class SupplierController extends Controller
+class SupplierController extends Controller implements HasMiddleware
 {
 
     public function __construct(private SupplierService $supplierService) {}
+
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('owner')
+        ];
+    }
 
     /**
      * Display a listing of the resource.

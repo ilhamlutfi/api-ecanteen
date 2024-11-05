@@ -8,14 +8,23 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Requests\ProductRequest;
 use App\Http\Services\ProductService;
 use App\Http\Resources\ResponseResource;
+use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Routing\Controllers\HasMiddleware;
 
-class ProductController extends Controller
+class ProductController extends Controller implements HasMiddleware
 {
 
     public function __construct(
         private ProductService $productService,
         private FileService $fileService
         ) {}
+
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('owner', except: ['index']),
+        ];
+    }
 
     /**
      * Display a listing of the resource.
