@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Requests\ProductRequest;
 use App\Http\Services\ProductService;
 use App\Http\Resources\ResponseResource;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Routing\Controllers\HasMiddleware;
 
@@ -22,7 +23,8 @@ class ProductController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('owner', except: ['index']),
+            new Middleware('owner', except: ['index', 'productInt']),
+            new Middleware('apikey', only: ['productInt', 'index']),
         ];
     }
 
@@ -54,6 +56,50 @@ class ProductController extends Controller implements HasMiddleware
             'code' => 200,
             'total_products' => $products->count()
         ], 200);
+    }
+
+    public function productInt()
+    {
+        $ip = 'product-int' . request()->ip();
+
+        $executed = RateLimiter::attempt($ip,
+            $perMinute = 2,
+            function () {
+                // select all, select paginate, search
+                $paginate = request()->paginate ? true : false;
+
+                $products = $this->productService->getProduct($paginate);
+
+                if ($products->isEmpty()) {
+                    return new ResponseResource(true, 'Products not available', null, [
+                        'code' => 200
+                    ], 200);
+                }
+
+                $productsResponse = $products->map(function ($product) {
+                    $product->price = 'Rp. ' . number_format($product->price, 0, '.', ',');
+                    $product->image = url(asset('storage/' . $product->image));
+                    // $product->makeHidden(['created_at', 'updated_at']); // hide field
+
+                    return $product;
+                });
+
+                return new ResponseResource(true, 'List of products', $productsResponse, [
+                    'code' => 200,
+                    'total_products' => $products->count()
+                ], 200);
+            }
+        );
+
+        if (!$executed) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Too many requests, please try again later.',
+                'code' => 429
+            ], 429);
+        }
+
+        return $executed;
     }
 
     /**
